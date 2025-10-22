@@ -3,6 +3,8 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <vector>
+#include <limits>
 
 using namespace std;
 using Board = array<char, 9>;
@@ -108,13 +110,52 @@ int promptMove(const Board& b, char playerSymbol) {
 	}
 }
 
-int main() {
+//Portfolio 2 Stuff
+
+bool isAllowedMark(char c) {
+	if (isalpha(static_cast<unsigned char>(c))) return true;	//A-Z, a-z
+	switch (c) { case '?': case '!': case '*': case '~': case '$': case '%': case '#': return true; }
+	return false;
+}
+
+char promptMark(const string& playerLabel) {
+	bool running = true;
+	while (running) {
+		cout << playerLabel << ", choose your mark (One Char: A-Z, a-z, ?, !, *, ~, $, %, #): ";
+		string s;
+
+		if (!getline(cin, s)) { cout << "\nInput Stream Closed. Exiting\n"; exit(0); }
+		if (s.size() != 1) { cout << "Please enter exactly one Character.\n"; continue; }
+
+		char c = s[0];
+		if (!isAllowedMark(c)) { cout << "\tThat Character is not allowed.\n"; continue; }
+		if (isspace(static_cast<unsigned char>(c))) { cout << "\tSpace is not allowed.\n"; continue; }
+		return c;
+	}
+}
+
+string promptArch(const string& playerLabel) {
+	bool running = true;
+	while (running) {
+		cout << playerLabel << ", choose your Archetype (Alchemist / Paladin): ";
+		string s;
+		if (!getline(cin, s)) {
+			cout << "\nInput stream closed. Exiting.\n";
+			exit(0);
+		}
+
+		string lower;
+		for (char c : s)lower += static_cast<char>(tolower(static_cast<unsigned char>(c)));
+
+		if (lower == "paladin" || lower == "alchemist") { return lower; }
+
+		cout << "\tInvalid Archetype. Please enter either Paladin or Alchemist.\n";
+	}
+}
+
+void playRegular() {
 	Board board;
 	clearBoard(board);
-
-	cout << "-Tic Tac Toe-\n"
-		<< "Player 1/X, Player 2/O"
-		<< "Get three in a row";
 
 	int turn = 0;
 	bool gameOver = false;
@@ -131,7 +172,7 @@ int main() {
 		char w = winner(board);
 		if (w == 'X' || w == 'O') {
 			printBoard(board);
-			cout << w << " won\n";
+			cout << w << " won\n" << endl;
 			gameOver = true;
 		}
 		else if (boardFull(board)) {
@@ -141,6 +182,61 @@ int main() {
 		}
 		else {
 			++turn;
+		}
+	}
+}
+
+void playBattle() {
+	Board board;
+	clearBoard(board);
+
+	if (cin.peek() == '\n') cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+	char p1 = promptMark("Player 1");
+	char p2 = promptMark("Player 2");
+
+	cout << "\nPlayer 1 chose '" << p1 << "'.\n";
+	cout << "Player 2 chose '" << p2 << "'.\n";
+
+	string a1 = promptArch("Player 1");
+	string a2 = promptArch("Player 2");
+
+	cout << "\nPlayer 1 chose '" << a1 << "'.\n";
+	cout << "Player 2 chose '" << a2 << "'.\n";
+
+}
+
+
+int main() {
+	int choice;
+	bool running = true;
+
+	while (running) {
+		cout << "-Tic Tac Toe-\n"
+			<< "Player 1/X, Player 2/O\n"
+			<< "Get three in a row\n";
+
+		cout << "\n1 for Regular Tic Tac Toe\n"
+			<< "2 for Battle Tic Tac Toe\n"
+			<< "3 to Quit\n";
+		cin >> choice;
+
+		switch (choice) {
+			case 1:
+				cout << "\nRegular Tic Tac Toe Chosen:\n";
+				playRegular();
+				break;
+			case 2:
+				cout << "\nBattle Tic Tac Toe Chosen:\n";
+				playBattle();
+				break;
+			case 3:
+				cout << "Quitting...\n";
+				running = false;
+				break;
+			default:
+				cout << "Invalid Choice. Please Try Again\n";
+				break;
 		}
 	}
 
