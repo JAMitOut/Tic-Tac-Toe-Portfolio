@@ -86,10 +86,9 @@ int parseMove(const string& raw) {
 
 
 //Checks for Bad Inputs
-int promptMove(const Board& b, char playerSymbol) {
+int promptMove(const Board& b, char playerMark, const string& label) {
 	while (true) {
-		cout << "Player " << (playerSymbol == 'X' ? "1 (X)" : "2 (O)")
-			<< ", choose a cell (1-9 or a-i): ";
+		cout << label << " (" << playerMark << "), choose a cell (1-9 or a-i): ";
 
 		string line;
 		if (!getline(cin, line)) {
@@ -202,7 +201,7 @@ bool isAdjacent(int from, int to) {
 	return find(adj.begin(), adj.end(), to) != adj.end();
 }
 
-
+//Reqular Tic Tac Toe
 void playRegular() {
 	Board board;
 	clearBoard(board);
@@ -216,7 +215,8 @@ void playRegular() {
 
 		if (winner(board) != ' ' || boardFull(board)) break;
 
-		int moveIndex = promptMove(board, player);
+		string label = (player == 'X') ? "Player 1" : "Player 2";
+		int moveIndex = promptMove(board, player, label);
 		board[moveIndex] = player;
 
 		char w = winner(board);
@@ -236,6 +236,7 @@ void playRegular() {
 	}
 }
 
+//Battle Tic Tac Toe
 void playBattle() {
 	Board board;
 	clearBoard(board);
@@ -280,12 +281,12 @@ void playBattle() {
 			string s;
 			if (!getline(cin, s)) { cout << "\nInput closed. Exiting.\n"; exit(0); }
 
-			if (s == "1") {
-				int idx = promptMove(board, mark);
+			if (s == "1") {	//Regular Move
+				int idx = promptMove(board, mark, label);
 				board[idx] = mark;
 				tookAction = true;
 			}
-			else if(s == "2" && arch == "alchemist") {
+			else if(s == "2" && arch == "alchemist") {	//Alchemist Check/Mov
 				if (countPlaced(board) < 2) {
 					cout << "You can't swap yet, you need at least two marks on the board to swap.\n";
 					continue;
@@ -294,12 +295,14 @@ void playBattle() {
 				int a = promptAnyOccupiedIdx(board, " Choose first occupied cell to swap: ");
 				int b = promptAnyOccupiedIdx(board, " Choose second occupied cell to swap: ");
 
+				//Alchemist Error Checks
 				if (a == b) { cout << "You chose the same cell twice.\n"; continue; }
 				if (board[a] == board[b]) { cout << "\tThose Match-Swaps would be Pointless.\n"; continue; }
+
 				swap(board[a], board[b]);
 				tookAction = true;
 			}
-			else if (s == "2" && arch == "paladin") {
+			else if (s == "2" && arch == "paladin") {	//Paladin Check/Move
 				if (countPlaced(board) < 1) {
 					cout << "\tYou can't shift yet, you need at least one mark on the board to shift.\n";
 					continue;
@@ -307,9 +310,10 @@ void playBattle() {
 				int from = promptAnyOccupiedIdx(board, " Choose an occupied cell to shift: ");
 				int to = promptAnyIdx("\tChoose a cell to shift to: ");
 
+				//Paladin Error Checks
 				if (from == to) { cout << " Destination must be different.\n"; continue; }
 				if (!isAdjacent(from, to)) { cout << " Destination is not adjacent.\n"; continue; }
-				if (board[to] != ' ') { cout << "Destination must not be empty.\n"; continue; }
+				if (board[to] != ' ') { cout << "Destination must be empty.\n"; continue; }
 
 				board[to] = board[from];
 				board[from] = ' ';
@@ -321,7 +325,7 @@ void playBattle() {
 		}
 
 		char w = winner(board);
-		if (w == 'X' || w == 'O') {
+		if (w != ' ') {
 			printBoard(board);
 			cout << w << " won\n" << endl;
 			gameOver = true;
@@ -351,6 +355,8 @@ int main() {
 			<< "2 for Battle Tic Tac Toe\n"
 			<< "3 to Quit\n";
 		cin >> choice;
+
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 		switch (choice) {
 			case 1:
