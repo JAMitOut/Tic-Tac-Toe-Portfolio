@@ -153,6 +153,56 @@ string promptArch(const string& playerLabel) {
 	}
 }
 
+int countPlaced(const Board& b) {
+	return static_cast<int>(count_if(b.begin(), b.end(), [](char c) {return c != ' '; }));
+}
+
+int promptAnyOccupiedIdx(const Board& b, const string& msg) {
+	bool running = true;
+	while (running) {
+		cout << msg;
+		string s;
+		if (!getline(cin, s)) { cout << "Input Closed. Exiting.\n"; exit(0); }
+
+		int idx = parseMove(s);
+		if (idx == -1) { cout << "Invalid Cell.\n"; continue; }
+		if (b[idx] == ' ') { cout << "\tThat Cell is Empty.\n"; continue; }
+		return idx;
+	}
+}
+
+int promptAnyIdx(const string& msg) {
+	bool running = true;
+	while (running) {
+		cout << msg;
+		string s;
+		if (!getline(cin, s)) { cout << "Input Closed. Exiting.\n"; exit(0); }
+
+		int idx = parseMove(s);
+		if (idx == -1) { cout << "Invalid Cell.\n"; continue; }
+		return idx;
+	}
+}
+
+vector<int> adjacentCells(int idx) {
+	int r = idx / 3, c = idx % 3;
+	vector<int> out;
+	for (int dr = -1; dr <= 1; ++dr) {
+		for (int dc = -1; dc <= 1; ++dc) {
+			if (dr == 0 && dc == 0) continue;
+			int rr = r + dr, cc = c + dc;
+			if (0 <= rr && rr < 3 && 0 <= cc && cc < 3) out.push_back(rr * 3 + cc);
+		}
+	}
+	return out;
+}
+
+bool isAdjacent(int from, int to) {
+	auto adj = adjacentCells(from);
+	return find(adj.begin(), adj.end(), to) != adj.end();
+}
+
+
 void playRegular() {
 	Board board;
 	clearBoard(board);
@@ -204,6 +254,87 @@ void playBattle() {
 	cout << "\nPlayer 1 chose '" << a1 << "'.\n";
 	cout << "Player 2 chose '" << a2 << "'.\n";
 
+	int turn = 0;
+	bool gameOver = false;
+
+	while (!gameOver) {
+		printBoard(board);
+		if (winner(board) != ' ' || boardFull(board)) break;
+
+		//These Check for a Players Turn
+		int p = turn % 2;
+		char mark = (p == 0 ? p1 : p2);
+		string arch = (p == 0 ? a1 : a2);
+		string label = string("Player ") + (p == 0 ? "1" : "2");
+
+		bool tookAction = false;
+		while (!tookAction) {
+			cout << label << " (" << mark << ") - Choose Action:\n";
+
+			//Moves able to be taken
+			cout << " 1) Regular Move\n";
+			if (arch == "alchemist") cout << " 2) Alchemist: swap two marks\n";
+			if (arch == "paladin") cout << " 2) Paladin: shift a mark to an adjacent empty cell\n";
+			cout << "Select: ";
+
+			string s;
+			if (!getline(cin, s)) { cout << "\nInput closed. Exiting.\n"; exit(0); }
+
+			if (s == "1") {
+				int idx = promptMove(board, mark);
+				board[idx] = mark;
+				tookAction = true;
+			}
+			else if(s == "2" && arch == "alchemist") {
+				if (countPlaced(board) < 2) {
+					cout << "You can't swap yet, you need at least two marks on the board to swap.\n";
+					continue;
+				}
+
+				int a = promptAnyOccupiedIdx(board, " Choose first occupied cell to swap: ");
+				int b = promptAnyOccupiedIdx(board, " Choose second occupied cell to swap: ");
+
+				if (a == b) { cout << "You chose the same cell twice.\n"; continue; }
+				if (board[a] == board[b]) { cout << "\tThose Match-Swaps would be Pointless.\n"; continue; }
+				swap(board[a], board[b]);
+				tookAction = true;
+			}
+			else if (s == "2" && arch == "paladin") {
+				if (countPlaced(board) < 1) {
+					cout << "\tYou can't shift yet, you need at least one mark on the board to shift.\n";
+					continue;
+				}
+				int from = promptAnyOccupiedIdx(board, " Choose an occupied cell to shift: ");
+				int to = promptAnyIdx("\tChoose a cell to shift to: ");
+
+				if (from == to) { cout << " Destination must be different.\n"; continue; }
+				if (!isAdjacent(from, to)) { cout << " Destination is not adjacent.\n"; continue; }
+				if (board[to] != ' ') { cout << "Destination must not be empty.\n"; continue; }
+
+				board[to] = board[from];
+				board[from] = ' ';
+				tookAction = true;
+			}
+			else {
+				cout << "\tInvalid Choice.\n";
+			}
+		}
+
+		char w = winner(board);
+		if (w == 'X' || w == 'O') {
+			printBoard(board);
+			cout << w << " won\n" << endl;
+			gameOver = true;
+		}
+		else if (boardFull(board)) {
+			printBoard(board);
+			cout << "Tie\n";
+			gameOver = true;
+		}
+		else {
+			++turn;
+		}
+	}
 }
 
 
