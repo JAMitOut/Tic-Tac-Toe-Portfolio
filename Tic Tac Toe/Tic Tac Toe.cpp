@@ -117,7 +117,7 @@ bool isAllowedMark(char c) {
 	return false;
 }
 
-char promptMark(const string& playerLabel) {
+char promptMark(const string& playerLabel, char forbidden = '\0') {
 	bool running = true;
 	while (running) {
 		cout << playerLabel << ", choose your mark (One Char: A-Z, a-z, ?, !, *, ~, $, %, #): ";
@@ -129,6 +129,11 @@ char promptMark(const string& playerLabel) {
 		char c = s[0];
 		if (!isAllowedMark(c)) { cout << "\tThat Character is not allowed.\n"; continue; }
 		if (isspace(static_cast<unsigned char>(c))) { cout << "\tSpace is not allowed.\n"; continue; }
+		if (forbidden != '\0' && c == forbidden) {
+			cout << "\tThat Mark is already taken by the other player.\n";
+			continue;
+		}
+
 		return c;
 	}
 }
@@ -241,10 +246,8 @@ void playBattle() {
 	Board board;
 	clearBoard(board);
 
-	if (cin.peek() == '\n') cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-	char p1 = promptMark("Player 1");
-	char p2 = promptMark("Player 2");
+	char p1 = promptMark("\nPlayer 1");
+	char p2 = promptMark("Player 2", p1);
 
 	cout << "\nPlayer 1 chose '" << p1 << "'.\n";
 	cout << "Player 2 chose '" << p2 << "'.\n";
@@ -286,7 +289,7 @@ void playBattle() {
 				board[idx] = mark;
 				tookAction = true;
 			}
-			else if(s == "2" && arch == "alchemist") {	//Alchemist Check/Mov
+			else if(s == "2" && arch == "alchemist") {	//Alchemist Check/Move
 				if (countPlaced(board) < 2) {
 					cout << "You can't swap yet, you need at least two marks on the board to swap.\n";
 					continue;
@@ -346,15 +349,23 @@ int main() {
 	int choice;
 	bool running = true;
 
+	cout << "-Tic Tac Toe-\n"
+		<< "Player 1/X, Player 2/O\n"
+		<< "Get three in a row\n";
+
 	while (running) {
-		cout << "-Tic Tac Toe-\n"
-			<< "Player 1/X, Player 2/O\n"
-			<< "Get three in a row\n";
 
 		cout << "\n1 for Regular Tic Tac Toe\n"
 			<< "2 for Battle Tic Tac Toe\n"
-			<< "3 to Quit\n";
-		cin >> choice;
+			<< "3 to Quit\n"
+			<< "Enter Choice: ";
+
+		if (!(cin >> choice)) {
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cout << "Invalid input. Please Try Again.\n";
+			continue;
+		}
 
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
